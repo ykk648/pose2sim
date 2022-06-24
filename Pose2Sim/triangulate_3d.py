@@ -41,6 +41,7 @@ import toml
 from tqdm import tqdm
 from scipy import interpolate
 import logging
+from pathlib import Path
 
 from Pose2Sim.common import computeP, weighted_triangulation, reprojection, \
     euclidean_distance, natural_sort
@@ -382,11 +383,22 @@ def triangulate_all(config):
     pose_listdirs_names = next(os.walk(pose_dir))[1]
     pose_listdirs_names = natural_sort(pose_listdirs_names)
     json_dirs_names = [k for k in pose_listdirs_names if json_folder_extension in k]
-    try: 
-        json_files_names = [fnmatch.filter(os.listdir(os.path.join(poseTracked_dir, js_dir)), '*.json') for js_dir in json_dirs_names]
+
+    json_file_sorted_probe = lambda x: int(x.split('.')[0])
+    try:
+        json_files_names = []
+        for js_dir in json_dirs_names:
+            before_sort = fnmatch.filter(os.listdir(os.path.join(poseTracked_dir, js_dir)), '*.json')
+            before_sort.sort(key=json_file_sorted_probe)
+            json_files_names.append(before_sort)
+        # print(json_files_names)
         json_tracked_files = [[os.path.join(poseTracked_dir, j_dir, j_file) for j_file in json_files_names[j]] for j, j_dir in enumerate(json_dirs_names)]
     except:
-        json_files_names = [fnmatch.filter(os.listdir(os.path.join(pose_dir, js_dir)), '*.json') for js_dir in json_dirs_names]
+        json_files_names = []
+        for js_dir in json_dirs_names:
+            before_sort = fnmatch.filter(os.listdir(os.path.join(pose_dir, js_dir)), '*.json')
+            before_sort.sort(key=json_file_sorted_probe)
+            json_files_names.append(before_sort)
         json_tracked_files = [[os.path.join(pose_dir, j_dir, j_file) for j_file in json_files_names[j]] for j, j_dir in enumerate(json_dirs_names)]
     
     # Triangulation

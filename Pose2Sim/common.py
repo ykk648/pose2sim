@@ -56,7 +56,8 @@ def computeP(calib_file):
         if cam != 'metadata':
             K = np.array(calib[cam]['matrix'])
             Kh = np.block([K, np.zeros(3).reshape(3,1)])
-            R, _ = cv2.Rodrigues(np.array(calib[cam]['rotation']))
+            # R, _ = cv2.Rodrigues(np.array(calib[cam]['rotation']))
+            R = np.array(calib[cam]['rotation'])
             T = np.array(calib[cam]['translation'])
             H = np.block([[R,T.reshape(3,1)], [np.zeros(3), 1 ]])
             
