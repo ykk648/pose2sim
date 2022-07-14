@@ -7,15 +7,16 @@
 [![status](https://joss.theoj.org/papers/a31cb207a180f7ac9838d049e3a0de26/status.svg)](https://joss.theoj.org/papers/a31cb207a180f7ac9838d049e3a0de26)
 
 # Pose2Sim
-This Python repository offers a way to perform a markerless kinematic analysis from multiple calibrated views as a unified workflow from an OpenPose input to an OpenSim result. \
-Pull requests, suggestions, and issues are very welcome.
+`Pose2Sim` provides a workflow for 3D markerless kinematics, as an alternative to the more usual marker-based motion capture methods.\
+Pose2Sim stands for "OpenPose to OpenSim", as it uses OpenPose inputs (2D keypoints coordinates obtained from multiple videos) and leads to an OpenSim result (full-body 3D joint angles). 
 
 <img src="Content/Overview.png" width="760">
 
 ## Contents
 1. [Installation and Demonstration](#installation-and-demonstration)
    1. [Installation](#installation)
-   2. [Demonstration](#demonstration)
+   2. [Demonstration Part-1: Build 3D TRC file on Python](#demonstration-part-1-build-3d-trc-file-on-python)
+   3. [Demonstration Part-2: Obtain 3D joint angles with OpenSim](#demonstration-part-2-obtain-3d-joint-angles-with-opensim)
 2. [Use on your own data](#use-on-your-own-data)
    1. [Prepare for running on your own data](#prepare-for-running-on-your-own-data)
    2. [2D pose estimation](#2d-pose-estimation)
@@ -25,13 +26,15 @@ Pull requests, suggestions, and issues are very welcome.
    6. [3D filtering](#3d-filtering)
    7. [OpenSim kinematics](#opensim-kinematics)
 3. [Utilities](#utilities)
-4. [How to cite and others](#how-to-cite-and-others)
+4. [How to cite and how to contribute](#how-to-cite-and-how-to-contribute)
+   1. [How to cite](#how-to-cite)
+   2. [How to contribute](#how-to-contribute)
 
 ## Installation and Demonstration
 
 ### Installation
-1. **Install OpenPose** (instructions [there](https://github.com/CMU-Perceptual-Computing-Lab/openpose#installation)).
-2. **Install OpenSim 4.x** ([there](https://simtk.org/frs/index.php?group_id=91)).
+1. **Install OpenPose** (instructions [there](https://github.com/CMU-Perceptual-Computing-Lab/openpose/blob/master/doc/installation/0_index.md)). Portable demo is enough.
+2. **Install OpenSim 4.x** ([there](https://simtk.org/frs/index.php?group_id=91)). Tested up to v4.4-beta.
 3. ***Optional.*** *Install Anaconda or [Miniconda](https://docs.conda.io/en/latest/miniconda.html). \
    Open an Anaconda terminal and create a virtual environment with typing:*
    <pre><i>conda create -n Pose2Sim python=3.8.8 
@@ -39,12 +42,12 @@ Pull requests, suggestions, and issues are very welcome.
    
 3. **Install Pose2Sim**: \
 If you don't use Anaconda, type `python -V` in terminal to make sure python>=3.6 is installed.
-   - **Quick install:** Open a terminal. 
+   - OPTION 1: **Quick install:** Open a terminal. 
        ```
-       pip install Pose2Sim
+       pip install pose2sim
        ```
      
-   - **Build from source:**
+   - OPTION 2: **Build from source:**
      Open a terminal in the directory of your choice and Clone the Pose2Sim repository.
        ```
        git clone https://gitlab.inria.fr/perfanalytics/pose2sim.git
@@ -52,11 +55,12 @@ If you don't use Anaconda, type `python -V` in terminal to make sure python>=3.6
        pip install .
        ```
           
-### Demonstration   
+### Demonstration Part-1: Build 3D TRC file on Python  
 > _**This demonstration provides an example experiment of a person balancing on a beam, filmed with 4 calibrated cameras processed with OpenPose.**_ 
 
-Open a terminal and check package location with `pip show Pose2Sim | grep Location`. \
-Open a python session in your `Pose2Sim\Demo` folder, and test the following code:
+Open a terminal and check package location with `pip show pose2sim | grep Location`. \
+Copy this path and go to the Demo folder with `cd <path>\pose2sim\Demo`. \
+Type `python`, and test the following code:
 ```
 from Pose2Sim import Pose2Sim
 Pose2Sim.calibrateCams()
@@ -65,12 +69,28 @@ Pose2Sim.triangulate3D()
 Pose2Sim.filter3D()
 ```
 You should obtain a plot of all the 3D coordinates trajectories. You can check the logs in`Demo\Users\logs.txt`.\
-Results are stored as .trc files in the `Demo/pose-3d` directory. 
+Results are stored as .trc files in the `Demo/pose-3d` directory.
 
-Default parameters have been provided in `Demo\Users\Config.toml` but can be edited.\
-Section [Opensim kinematics](#opensim-kinematics) describes how to obtain 3D joint angles.
+*N.B.:* Default parameters have been provided in `Demo\Users\Config.toml` but can be edited.
+<br/>
+
+### Demonstration Part-2: Obtain 3D joint angles with OpenSim  
+> _**In the same vein as you would do with marker-based kinematics, start with scaling your model, and then perform inverse kinematics.**_ 
+
+#### Scaling
+1. Open OpenSim.
+2. Open the provided `Model_Pose2Sim_Body25b.osim` model from `pose2sim/Demo/opensim`. *(File -> Open Model)*
+3. Load the provided `Scaling_Setup_Pose2Sim_Body25b.xml` scaling file from `pose2sim/Demo/opensim`. *(Tools -> Scale model -> Load)*
+4. Run. You should see your skeletal model take the static pose.
+
+#### Inverse kinematics
+1. Load the provided `IK_Setup_Pose2Sim_Body25b.xml` scaling file from `pose2sim/Demo/opensim`. *(Tools -> Inverse kinematics -> Load)*
+2. Run. You should see your skeletal model move in the Vizualizer window.
+<br/>
 
 ## Use on your own data
+
+> _**Deeper explanations and instructions are given below.**_
 
 ### Prepare for running on your own data
   > _**Get ready.**_
@@ -379,24 +399,25 @@ Output:\
 > _**Obtain 3D joint angles.**_
 
 #### Scaling
-In the same vein as you would do with marker-based kinematics, start with scaling your model.
-1. Use the previous steps to capture a static pose, typically a T-pose (example file: `Standing_for_Scaling.trc`.)
+1. Use the previous steps to capture a static pose, typically an A-pose or a T-pose.
 2. Open OpenSim.
-3. Open the provided `Model_Pose2Sim_Body25b.osim` model from `Pose2Sim/Demo/opensim`. *(File -> Open Model)*
-4. Load the provided `Scaling_Setup_Pose2Sim_Body25b.xml` scaling file from `Pose2Sim/Demo/opensim`. *(Tools -> Scale model -> Load)*
-5. Replace the example static .trc file with your own data if needed.
+3. Open the provided `Model_Pose2Sim_Body25b.osim` model from `pose2sim/Empty_project/opensim`. *(File -> Open Model)*
+4. Load the provided `Scaling_Setup_Pose2Sim_Body25b.xml` scaling file from `pose2sim/Empty_project/opensim`. *(Tools -> Scale model -> Load)*
+5. Replace the example static .trc file with your own data.
 6. Run
 7. Save the new scaled OpenSim model.
 
 #### Inverse kinematics
-1. Use Pose2Sim to generate 3D trajectories (example file: `Balancing_for_IK.trc`.)
+1. Use Pose2Sim to generate 3D trajectories.
 2. Open OpenSim.
-3. Load the provided `IK_Setup_Pose2Sim_Body25b.xml` scaling file from `Pose2Sim/Demo/opensim`. *(Tools -> Inverse kinematics -> Load)*
-4. Replace the example .trc file with your own data if needed, and specify the path to your angle kinematics output file.
+3. Load the provided `IK_Setup_Pose2Sim_Body25b.xml` scaling file from `pose2sim/Empty_project/opensim`. *(Tools -> Inverse kinematics -> Load)*
+4. Replace the example .trc file with your own data, and specify the path to your angle kinematics output file.
 5. Run
-6. Motion results will appear as .mot file in the Demo/opensim directory (automatically saved).
+6. Motion results will appear as .mot file in the `pose2sim/Empty_project/opensim` directory (automatically saved).
 
 <img src="Content/OpenSim.JPG" width="380">
+
+
 
 <figure><img src='Content/Activities_verylow.gif' title='Other more or less challenging tasks and conditions.'>
 <figcaption>Pose2Sim has been tested on other more or less challenging tasks and conditions.</figcaption></figure>
@@ -517,7 +538,7 @@ Detects gait events from point coordinates according to [Zeni et al. (2008)](htt
 </details>
 
 
-## How to cite and others
+## How to cite and how to contribute
 #### How to cite
 If you use this code or data, please cite [Pagnon et al., 2022](https://www.mdpi.com/1424-8220/22/7/2712) or [Pagnon et al., 2021](https://www.mdpi.com/1424-8220/21/19/6530).
     
@@ -539,22 +560,25 @@ If you use this code or data, please cite [Pagnon et al., 2022](https://www.mdpi
       URL = {https://www.mdpi.com/1424-8220/21/19/6530},
     }
 
-#### Contributers
-David Pagnon (maintainer, developer), contact@david-pagnon.com\
-Lionel Reveret, lionel.reveret@inria.fr\
-Mathieu Domalain, mathieu.domalain@univ-poitiers.fr
 
-#### To do list
-* Conda install and Docker image
-* Multiple persons kinematics (triangulating multiple persons, and sorting them in time)
-* Solve limb swapping
-* Implement normalized DLT and RANSAC triangulation
-* Implement triangulation refinement step (cf DOI:10.1109/TMM.2022.3171102)
-* Implement optimal fixed-interval Kalman smoothing
-* Calibrate with Aruco, Charuco, and refine results: take inspiration from AniPose
-* Utilities: convert Vicon xcp calibration file to toml
-* Run from command line via click or typer
-* Make GUI interface
-* Catch errors
+#### How to contribute
 
-Pull requests and suggestions are always welcome!
+I would happily welcome any proposal for new features, code improvement, and more!\
+If you want to contribute to Pose2Sim, please follow [this guide](https://docs.github.com/en/get-started/quickstart/contributing-to-projects) on how to fork, modify and push code, and submit a pull request. I would appreciate it if you provided as much useful information as possible about how you modified the code, and a rationale for why you're making this pull request. Please also specify on which operating system and on which python version you have tested the code.
+
+*Here is a to-do list, for general guidance purposes only:*
+> <li> Integrate as a Blender and / or Maya add-on. See <a href="https://github.com/davidpagnon/Maya-Mocap">Maya-Mocap</a> and <a href="https://github.com/JonathanCamargo/BlendOsim">BlendOSim</a>
+> <li> Multiple persons kinematics (triangulating multiple persons, and sorting them in time)</li>
+> <li> Use aniposelib for better calibration </li>
+> <li> Finish deploying Body_135, MediaPipe, AlphaPose, and DeepLabCut compatibility </li>
+> </br>
+> <li> Conda package and Docker image</li>
+> <li> Solve limb swapping</li>
+> <li> Implement normalized DLT and RANSAC triangulation, as well as a triangulation refinement step (cf DOI:10.1109/TMM.2022.3171102)</li>
+> <li> Implement optimal fixed-interval Kalman smoothing</li>
+> <li> Utilities: convert Vicon xcp calibration file to toml</li>
+> <li> Run from command line via click or typer</li>
+> <li> Catch errors</li>
+> <li> Make GUI</li>
+
+
